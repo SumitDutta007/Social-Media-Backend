@@ -12,7 +12,7 @@ const path = require("path");
 
 dotenv.config();
 //server
-const PORT = process.env.PORT || 8800;
+const PORT = 'https://social-media-backend-dwnj.onrender.com';
 
 // Connect to DB
 const linkDatabase = async () => {
