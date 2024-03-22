@@ -59,6 +59,6 @@ app.use("/api/auth", authRoute);
 app.use("/api/posts", postRoute);
 
 //Server
-app.listen(PORT,ADDRESS, () => {
+app.listen(PORT ,() => {
     console.log(`Server is running on port ${PORT}`);
 });
