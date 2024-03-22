@@ -12,7 +12,8 @@ const path = require("path");
 
 dotenv.config();
 //server
-const PORT = 'https://social-media-backend-dwnj.onrender.com';
+const PORT = 8800;
+const ADDRESS = process.env.ADDRESS || "localhost";
 
 // Connect to DB
 const linkDatabase = async () => {
@@ -58,6 +59,6 @@ app.use("/api/auth", authRoute);
 app.use("/api/posts", postRoute);
 
 //Server
-app.listen(PORT, () => {
+app.listen(PORT,ADDRESS, () => {
     console.log(`Server is running on port ${PORT}`);
 });
