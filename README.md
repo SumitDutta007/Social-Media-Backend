@@ -3,7 +3,7 @@
 
 ### **Social Media Backend**
 
-```markdown
+
 # Social Media Backend
 
 Welcome to the **Social Media Backend**! This is the backend API for the **Social Media Full Stack App**. It is built with **Node.js** and **Express.js**, and uses **MongoDB** for storing user data, posts, and other social features.
