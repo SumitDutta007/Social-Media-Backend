@@ -9,6 +9,7 @@ const userRoute = require("./routes/users.js");
 const authRoute = require("./routes/auth.js");
 const postRoute = require("./routes/posts.js");
 const path = require("path");
+const cors = require('cors');
 
 dotenv.config();
 //server
@@ -27,6 +28,13 @@ const linkDatabase = async () => {
 }
 linkDatabase();
 
+const allowedOrigins = ['https://tiny-crepe-0aa8fa.netlify.app'];
+
+app.use(cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use("/images",express.static(path.join(__dirname,"public/images")));
 
 // Middleware
