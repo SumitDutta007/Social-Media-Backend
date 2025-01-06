@@ -28,12 +28,10 @@ const linkDatabase = async () => {
 }
 linkDatabase();
 
-const allowedOrigins = ['https://tiny-crepe-0aa8fa.netlify.app'];
-
 app.use(cors({
-    origin: allowedOrigins,
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
 }));
 app.use("/images",express.static(path.join(__dirname,"public/images")));
 
