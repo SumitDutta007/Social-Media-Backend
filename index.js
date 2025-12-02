@@ -32,11 +32,7 @@ app.use("/images", express.static(path.join(__dirname, "public/images")));
 
 // Middleware
 app.use(express.json());
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false,
-  })
-);
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 
 const storage = multer.diskStorage({
