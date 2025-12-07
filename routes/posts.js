@@ -102,14 +102,24 @@ router.get("/timeline/all/:userId", async (req, res) => {
     }
 
     // Get user's own posts and posts from people they follow
-    const posts = await Post.findAll({
-      where: {
-        userId: {
-          [Op.in]: [currentUser.id, ...currentUser.followings],
+    // If followings array is empty, show all posts (public feed)
+    let posts;
+    if (currentUser.followings && currentUser.followings.length > 0) {
+      // Show posts from user and their followings
+      posts = await Post.findAll({
+        where: {
+          userId: {
+            [Op.in]: [currentUser.id, ...currentUser.followings],
+          },
         },
-      },
-      order: [["createdAt", "DESC"]],
-    });
+        order: [["createdAt", "DESC"]],
+      });
+    } else {
+      // Show all posts (public feed) if user doesn't follow anyone
+      posts = await Post.findAll({
+        order: [["createdAt", "DESC"]],
+      });
+    }
 
     res.status(200).json(posts);
   } catch (err) {
