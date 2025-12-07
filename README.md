@@ -182,10 +182,6 @@ See `POSTGRES_MIGRATION_GUIDE.md` for details.
 
 Feel free to fork this repository and submit pull requests!
 
-## 📄 **License**
-
-MIT License
-
 ---
 
 **Built with ❤️ using Node.js, Express, and PostgreSQL**
