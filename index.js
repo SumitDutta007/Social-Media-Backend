@@ -64,6 +64,13 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
   }
 });
 
+// Test endpoint
+app.get("/", (req, res) => {
+  res
+    .status(200)
+    .json({ message: "Social Media API is running", status: "OK" });
+});
+
 app.use("/api/users", userRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/posts", postRoute);
