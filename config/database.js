@@ -1,26 +1,50 @@
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 5432,
-    dialect: "postgres",
-    logging: false, // Set to console.log to see SQL queries during development
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-    define: {
-      timestamps: true,
-      underscored: false,
-    },
-  }
-);
+// Check if DATABASE_URL is provided (production - Render, Heroku, etc.)
+// Otherwise use individual connection parameters (local development)
+const sequelize = process.env.DATABASE_URL
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: "postgres",
+      protocol: "postgres",
+      logging: false,
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false, // Required for Render PostgreSQL
+        },
+      },
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000,
+      },
+      define: {
+        timestamps: true,
+        underscored: false,
+      },
+    })
+  : new Sequelize(
+      process.env.DB_NAME,
+      process.env.DB_USER,
+      process.env.DB_PASSWORD,
+      {
+        host: process.env.DB_HOST,
+        port: process.env.DB_PORT || 5432,
+        dialect: "postgres",
+        logging: false,
+        pool: {
+          max: 5,
+          min: 0,
+          acquire: 30000,
+          idle: 10000,
+        },
+        define: {
+          timestamps: true,
+          underscored: false,
+        },
+      }
+    );
 
 module.exports = sequelize;

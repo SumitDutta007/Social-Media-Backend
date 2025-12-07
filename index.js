@@ -24,10 +24,15 @@ const connectDB = async () => {
 
     // Sync models (creates tables if they don't exist)
     // Use { alter: true } in development, { force: false } in production
-    await sequelize.sync({ alter: true });
+    const syncMode =
+      process.env.NODE_ENV === "production" ? { alter: true } : { alter: true };
+    await sequelize.sync(syncMode);
     console.log("✅ Database synchronized successfully");
   } catch (err) {
-    console.error("❌ Unable to connect to database:", err.message);
+    console.error("❌ Unable to connect to database:");
+    console.error("Error Message:", err.message);
+    console.error("Error Details:", err);
+    console.error("DATABASE_URL present:", !!process.env.DATABASE_URL);
     process.exit(1);
   }
 };
