@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const helmet = require("helmet");
 const morgan = require("morgan");
-const mongoose = require("mongoose");
+const sequelize = require("./config/database");
 const dotenv = require("dotenv");
 const multer = require("multer");
 const userRoute = require("./routes/users.js");
@@ -12,20 +12,26 @@ const path = require("path");
 const cors = require("cors");
 
 dotenv.config();
-//server
-const PORT = process.env.PORT;
-const ADDRESS = process.env.ADDRESS || "localhost";
 
-// Connect to DB
-const linkDatabase = async () => {
+// Server configuration
+const PORT = process.env.PORT || 8800;
+
+// Connect to PostgreSQL Database
+const connectDB = async () => {
   try {
-    const connect = await mongoose.connect(process.env.MONGO_URL);
-    console.log(`MongoDB connected : ${connect.connection.host}`);
+    await sequelize.authenticate();
+    console.log("✅ PostgreSQL connection established successfully");
+
+    // Sync models (creates tables if they don't exist)
+    // Use { alter: true } in development, { force: false } in production
+    await sequelize.sync({ alter: true });
+    console.log("✅ Database synchronized successfully");
   } catch (err) {
-    console.log("Error: ", err.message);
+    console.error("❌ Unable to connect to database:", err.message);
+    process.exit(1);
   }
 };
-linkDatabase();
+connectDB();
 
 app.use(cors());
 app.use("/images", express.static(path.join(__dirname, "public/images")));

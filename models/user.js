@@ -1,50 +1,67 @@
-const modgoose = require("mongoose");
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/database");
 
-const userSchema = new modgoose.Schema({
-    username:{
-        type:String,
-        require:true,
-        min:3,
-        max:20,
-        unique:true,
+const User = sequelize.define(
+  "User",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
     },
-    password:{
-        type:String,
-        require:true,
-        min:6,
+    username: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      unique: true,
+      validate: {
+        len: [3, 20],
+      },
     },
-    email:{
-        type:String,
-        require:true,
-        max:50,
-        unique:true,
+    email: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true,
+        len: [1, 50],
+      },
     },
-    profilePicture:{
-        type:String,
-        default:"",
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        len: [6, 100],
+      },
     },
-    coverPicture:{
-        type:String,
-        default:"",
+    profilePicture: {
+      type: DataTypes.STRING,
+      defaultValue: "",
     },
-    followers:{
-        type:Array,
-        default:[],
+    coverPicture: {
+      type: DataTypes.STRING,
+      defaultValue: "",
     },
-    followings:{
-        type:Array,
-        default:[],
+    followers: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      defaultValue: [],
     },
-    isAdmin:{
-        type:Boolean,
-        default:false
+    followings: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      defaultValue: [],
     },
-    desc:{
-        type:String,
-        max:50,
-    }
-},
-{timestamps:true}
+    isAdmin: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    desc: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
+  },
+  {
+    timestamps: true,
+    tableName: "users",
+  }
 );
 
-module.exports = modgoose.model("User",userSchema);
+module.exports = User;

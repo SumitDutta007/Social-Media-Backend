@@ -1,30 +1,55 @@
-const mongoose = require("mongoose");
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/database");
+const User = require("./user");
 
-const postSchema = new mongoose.Schema({
-    userId:{
-        type:String,
-        required:true,
+const Post = sequelize.define(
+  "Post",
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
     },
-    desc:{
-        type:String,
-        max:500
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "users",
+        key: "id",
+      },
     },
-    img:{
-        type:String
+    desc: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      validate: {
+        len: [0, 500],
+      },
     },
-    likes:{
-        type:Array,
-        default:[]
+    img: {
+      type: DataTypes.STRING,
+      allowNull: true,
     },
-    dislikes:{
-        type:Array,
-        deault:[]
+    likes: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      defaultValue: [],
     },
-    comments:{
-        type:Array,
-        default:[]
+    dislikes: {
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      defaultValue: [],
     },
+    comments: {
+      type: DataTypes.ARRAY(DataTypes.JSON),
+      defaultValue: [],
+    },
+  },
+  {
+    timestamps: true,
+    tableName: "posts",
+  }
+);
 
-},{timestamps:true});
+// Define associations
+Post.belongsTo(User, { foreignKey: "userId", as: "author" });
+User.hasMany(Post, { foreignKey: "userId", as: "posts" });
 
-module.exports = mongoose.model("Post",postSchema);
+module.exports = Post;
