@@ -5,6 +5,8 @@ const morgan = require("morgan");
 const sequelize = require("./config/database");
 const dotenv = require("dotenv");
 const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const userRoute = require("./routes/users.js");
 const authRoute = require("./routes/auth.js");
 const postRoute = require("./routes/posts.js");
@@ -12,6 +14,13 @@ const path = require("path");
 const cors = require("cors");
 
 dotenv.config();
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Server configuration
 const PORT = process.env.PORT || 8800;
@@ -46,21 +55,38 @@ app.use(express.json());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/images/posts");
-  },
-  filename: (req, file, cb) => {
-    cb(null, req.body.name);
-  },
-});
+// Use Cloudinary storage if configured, otherwise use local storage
+const storage = process.env.CLOUDINARY_CLOUD_NAME
+  ? new CloudinaryStorage({
+      cloudinary: cloudinary,
+      params: {
+        folder: "sociomed/posts",
+        allowed_formats: ["jpg", "jpeg", "png", "gif", "webp"],
+        public_id: (req, file) => req.body.name || Date.now().toString(),
+      },
+    })
+  : multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, "public/images/posts");
+      },
+      filename: (req, file, cb) => {
+        cb(null, req.body.name);
+      },
+    });
 
 const upload = multer({ storage: storage });
 app.post("/api/upload", upload.single("file"), (req, res) => {
   try {
-    return res.status(200).json("File uploaded successfully");
+    // Return the Cloudinary URL if using Cloudinary, otherwise return filename
+    const fileUrl = req.file.path || req.body.name;
+    return res.status(200).json({
+      message: "File uploaded successfully",
+      filename: req.body.name,
+      url: fileUrl,
+    });
   } catch (err) {
     console.log(err);
+    res.status(500).json({ error: "Upload failed" });
   }
 });
 
