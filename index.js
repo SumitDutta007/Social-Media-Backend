@@ -77,16 +77,28 @@ const storage = process.env.CLOUDINARY_CLOUD_NAME
 const upload = multer({ storage: storage });
 app.post("/api/upload", upload.single("file"), (req, res) => {
   try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
     // Return the Cloudinary URL if using Cloudinary, otherwise return filename
     const fileUrl = req.file.path || req.body.name;
+    const isCloudinary = !!process.env.CLOUDINARY_CLOUD_NAME;
+
+    console.log("Upload successful:", {
+      filename: req.body.name,
+      url: fileUrl,
+      cloudinary: isCloudinary,
+    });
+
     return res.status(200).json({
       message: "File uploaded successfully",
       filename: req.body.name,
       url: fileUrl,
     });
   } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "Upload failed" });
+    console.error("Upload error:", err);
+    res.status(500).json({ error: "Upload failed", details: err.message });
   }
 });
 

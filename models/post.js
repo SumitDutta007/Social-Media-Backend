@@ -26,7 +26,7 @@ const Post = sequelize.define(
       },
     },
     img: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(500), // Increased to 500 to handle long Cloudinary URLs
       allowNull: true,
     },
     likes: {
