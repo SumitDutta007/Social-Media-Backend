@@ -1,11 +1,10 @@
 const router = require("express").Router();
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
-const { Op } = require("sequelize");
 
 //update user
 router.put("/:id", async (req, res) => {
-  if (req.body.userId === parseInt(req.params.id) || req.body.isAdmin) {
+  if (req.body.userId === req.params.id || req.body.isAdmin) {
     if (req.body.password) {
       try {
         const salt = await bcrypt.genSalt(10);
@@ -17,8 +16,8 @@ router.put("/:id", async (req, res) => {
     }
 
     try {
-      await User.update(req.body, {
-        where: { id: req.params.id },
+      await User.findByIdAndUpdate(req.params.id, {
+        $set: req.body,
       });
       res.status(200).json("Account has been updated");
     } catch (err) {
@@ -32,11 +31,9 @@ router.put("/:id", async (req, res) => {
 
 //delete user
 router.delete("/:id", async (req, res) => {
-  if (req.body.userId === parseInt(req.params.id) || req.body.isAdmin) {
+  if (req.body.userId === req.params.id || req.body.isAdmin) {
     try {
-      await User.destroy({
-        where: { id: req.params.id },
-      });
+      await User.findByIdAndDelete(req.params.id);
       res.status(200).json("Account has been deleted");
     } catch (err) {
       console.log("Error: ", err.message);
@@ -54,24 +51,25 @@ router.get("/", async (req, res) => {
 
   try {
     const user = userId
-      ? await User.findByPk(userId)
-      : await User.findOne({ where: { username: username } });
+      ? await User.findById(userId)
+      : await User.findOne({ username: username });
 
     if (!user) {
       return res.status(404).json("User not found");
     }
 
-    const { password, updatedAt, ...other } = user.toJSON();
+    const { password, updatedAt, ...other } = user._doc;
     res.status(200).json(other);
   } catch (err) {
     console.log("Error: ", err.message);
     return res.status(500).json(err);
   }
 });
+
 //get all users
 router.get("/all", async (req, res) => {
   try {
-    const users = await User.findAll({});
+    const users = await User.find();
     res.status(200).json(users);
   } catch (err) {
     console.log("Error: ", err.message);
@@ -82,20 +80,24 @@ router.get("/all", async (req, res) => {
 //get friends
 router.get("/friends/:userId", async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.userId);
+    const user = await User.findById(req.params.userId);
 
     if (!user) {
       return res.status(404).json("User not found");
     }
 
-    const friends = await User.findAll({
-      where: {
-        id: { [Op.in]: user.followings },
-      },
-      attributes: ["id", "username", "profilePicture"],
-    });
+    const friends = await Promise.all(
+      user.followings.map((friendId) => {
+        return User.findById(friendId);
+      })
+    );
 
-    res.status(200).json(friends);
+    let friendList = [];
+    friends.map((friend) => {
+      const { _id, username, profilePicture } = friend;
+      friendList.push({ _id, username, profilePicture });
+    });
+    res.status(200).json(friendList);
   } catch (err) {
     console.log("Error: ", err.message);
     return res.status(500).json(err);
@@ -104,23 +106,18 @@ router.get("/friends/:userId", async (req, res) => {
 
 //follow a user
 router.put("/:id/follow", async (req, res) => {
-  if (req.body.userId !== parseInt(req.params.id)) {
+  if (req.body.userId !== req.params.id) {
     try {
-      const user = await User.findByPk(req.params.id);
-      const currentUser = await User.findByPk(req.body.userId);
+      const user = await User.findById(req.params.id);
+      const currentUser = await User.findById(req.body.userId);
 
       if (!user || !currentUser) {
         return res.status(404).json("User not found");
       }
 
       if (!user.followers.includes(req.body.userId)) {
-        // Add to followers and followings arrays
-        await user.update({
-          followers: [...user.followers, req.body.userId],
-        });
-        await currentUser.update({
-          followings: [...currentUser.followings, parseInt(req.params.id)],
-        });
+        await user.updateOne({ $push: { followers: req.body.userId } });
+        await currentUser.updateOne({ $push: { followings: req.params.id } });
         res.status(200).json("User has been followed");
       } else {
         res.status(403).json("You already follow this user");
@@ -136,25 +133,18 @@ router.put("/:id/follow", async (req, res) => {
 
 //unfollow a user
 router.put("/:id/unfollow", async (req, res) => {
-  if (req.body.userId !== parseInt(req.params.id)) {
+  if (req.body.userId !== req.params.id) {
     try {
-      const user = await User.findByPk(req.params.id);
-      const currentUser = await User.findByPk(req.body.userId);
+      const user = await User.findById(req.params.id);
+      const currentUser = await User.findById(req.body.userId);
 
       if (!user || !currentUser) {
         return res.status(404).json("User not found");
       }
 
       if (user.followers.includes(req.body.userId)) {
-        // Remove from followers and followings arrays
-        await user.update({
-          followers: user.followers.filter((id) => id !== req.body.userId),
-        });
-        await currentUser.update({
-          followings: currentUser.followings.filter(
-            (id) => id !== parseInt(req.params.id)
-          ),
-        });
+        await user.updateOne({ $pull: { followers: req.body.userId } });
+        await currentUser.updateOne({ $pull: { followings: req.params.id } });
         res.status(200).json("User has been unfollowed");
       } else {
         res.status(403).json("You don't follow this user");
