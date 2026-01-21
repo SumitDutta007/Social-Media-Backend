@@ -1,67 +1,51 @@
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
+const mongoose = require("mongoose");
 
-const User = sequelize.define(
-  "User",
+const UserSchema = new mongoose.Schema(
   {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
     username: {
-      type: DataTypes.STRING(20),
-      allowNull: false,
+      type: String,
+      required: true,
       unique: true,
-      validate: {
-        len: [3, 20],
-      },
+      minlength: 3,
+      maxlength: 20,
     },
     email: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
+      type: String,
+      required: true,
       unique: true,
-      validate: {
-        isEmail: true,
-        len: [1, 50],
-      },
+      maxlength: 50,
     },
     password: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        len: [6, 100],
-      },
+      type: String,
+      required: true,
+      minlength: 6,
     },
     profilePicture: {
-      type: DataTypes.STRING,
-      defaultValue: "",
+      type: String,
+      default: "",
     },
     coverPicture: {
-      type: DataTypes.STRING,
-      defaultValue: "",
+      type: String,
+      default: "",
     },
     followers: {
-      type: DataTypes.ARRAY(DataTypes.INTEGER),
-      defaultValue: [],
+      type: Array,
+      default: [],
     },
     followings: {
-      type: DataTypes.ARRAY(DataTypes.INTEGER),
-      defaultValue: [],
+      type: Array,
+      default: [],
     },
     isAdmin: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
+      type: Boolean,
+      default: false,
     },
     desc: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
+      type: String,
+      maxlength: 50,
     },
   },
-  {
-    timestamps: true,
-    tableName: "users",
-  }
+  { timestamps: true }
 );
 
-module.exports = User;
+module.exports = mongoose.model("User", UserSchema);
