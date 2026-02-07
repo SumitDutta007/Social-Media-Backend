@@ -5,11 +5,18 @@ const User = require("../models/user");
 //create a post
 router.post("/", async (req, res) => {
   try {
+    console.log("Received post creation request:", req.body);
+    
+    if (!req.body.userId) {
+      return res.status(400).json({ error: "userId is required" });
+    }
+
     const newPost = new Post(req.body);
     const savedPost = await newPost.save();
+    console.log("Post created successfully:", savedPost);
     res.status(200).json(savedPost);
   } catch (err) {
-    console.log("Error: ", err.message);
+    console.log("Error creating post: ", err.message);
     res.status(500).json({ error: err.message });
   }
 });

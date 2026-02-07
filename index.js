@@ -19,7 +19,17 @@ const PORT = process.env.PORT || 8800;
 // Connect to MongoDB Database
 connectDB();
 
-app.use(cors());
+// CORS configuration to allow requests from Netlify
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'https://social-med-007.netlify.app'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use("/images", express.static(path.join(__dirname, "public/images")));
 
 // Middleware
