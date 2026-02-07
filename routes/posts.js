@@ -6,7 +6,7 @@ const User = require("../models/user");
 router.post("/", async (req, res) => {
   try {
     console.log("Received post creation request:", req.body);
-    
+
     if (!req.body.userId) {
       return res.status(400).json({ error: "userId is required" });
     }
@@ -138,6 +138,41 @@ router.get("/profile/:username", async (req, res) => {
     res.status(200).json(posts);
   } catch (err) {
     console.log("Error: ", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// search posts by username
+router.get("/search", async (req, res) => {
+  try {
+    const username = req.query.username;
+    
+    if (!username) {
+      return res.status(400).json({ error: "Username query is required" });
+    }
+
+    console.log("Searching for posts by username:", username);
+
+    // Find users matching the search query (case-insensitive)
+    const users = await User.find({
+      username: { $regex: username, $options: "i" }
+    }).select("_id");
+
+    if (users.length === 0) {
+      console.log("No users found");
+      return res.status(200).json([]);
+    }
+
+    // Get all posts from matched users
+    const userIds = users.map(user => user._id);
+    const posts = await Post.find({
+      userId: { $in: userIds }
+    }).sort({ createdAt: -1 });
+
+    console.log(`Found ${posts.length} posts from ${users.length} users`);
+    res.status(200).json(posts);
+  } catch (err) {
+    console.log("Search error: ", err.message);
     res.status(500).json({ error: err.message });
   }
 });

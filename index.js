@@ -21,12 +21,9 @@ connectDB();
 
 // CORS configuration to allow requests from Netlify
 const corsOptions = {
-  origin: [
-    'http://localhost:3000',
-    'https://social-med-007.netlify.app'
-  ],
+  origin: ["http://localhost:3000", "https://social-med-007.netlify.app"],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions));

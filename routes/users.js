@@ -77,6 +77,32 @@ router.get("/all", async (req, res) => {
   }
 });
 
+// search users by username
+router.get("/search", async (req, res) => {
+  try {
+    const query = req.query.q;
+    
+    if (!query) {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+
+    console.log("Searching for users with query:", query);
+
+    // Case-insensitive search for username
+    const users = await User.find({
+      username: { $regex: query, $options: "i" }
+    })
+    .limit(20)
+    .select("-password -updatedAt"); // Don't send password
+
+    console.log(`Found ${users.length} users`);
+    res.status(200).json(users);
+  } catch (err) {
+    console.log("Search error: ", err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
 //get friends
 router.get("/friends/:userId", async (req, res) => {
   try {
