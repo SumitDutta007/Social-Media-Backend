@@ -786,18 +786,12 @@ Contributions are welcome! Please follow these guidelines:
 
 ---
 
-## 📝 License
-
-This project is licensed under the MIT License.
-
----
-
 ## 👨‍💻 Author
 
 **Sumit Dutta**
 
 - GitHub: [@SumitDutta007](https://github.com/SumitDutta007)
-- Portfolio: https://social-med-007.netlify.app
+- Portfolio: [https://social-med-007.netlify.app](https://sumitdutta.netlify.app/)
 
 ---
 
