@@ -81,7 +81,7 @@ router.get("/all", async (req, res) => {
 router.get("/search", async (req, res) => {
   try {
     const query = req.query.q;
-    
+
     if (!query) {
       return res.status(400).json({ error: "Search query is required" });
     }
@@ -90,10 +90,10 @@ router.get("/search", async (req, res) => {
 
     // Case-insensitive search for username
     const users = await User.find({
-      username: { $regex: query, $options: "i" }
+      username: { $regex: query, $options: "i" },
     })
-    .limit(20)
-    .select("-password -updatedAt"); // Don't send password
+      .limit(20)
+      .select("-password -updatedAt"); // Don't send password
 
     console.log(`Found ${users.length} users`);
     res.status(200).json(users);
@@ -115,7 +115,7 @@ router.get("/friends/:userId", async (req, res) => {
     const friends = await Promise.all(
       user.followings.map((friendId) => {
         return User.findById(friendId);
-      })
+      }),
     );
 
     let friendList = [];
