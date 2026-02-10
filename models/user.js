@@ -48,4 +48,18 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// ⚡ Database Indexes for Performance Optimization
+
+// 1. Text index for full-text search on username
+UserSchema.index({ username: 'text' });
+
+// 2. Regular index for username search (case-insensitive queries)
+UserSchema.index({ username: 1 });
+
+// 3. Index for email lookups (authentication)
+UserSchema.index({ email: 1 });
+
+// 4. Compound index for common queries
+UserSchema.index({ username: 1, email: 1 });
+
 module.exports = mongoose.model("User", UserSchema);
