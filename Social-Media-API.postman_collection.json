@@ -1,0 +1,714 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "Social Media API - Complete Collection",
+		"description": "Complete API documentation for Social Media Platform with JWT Authentication and Role-Based Access Control (RBAC).\n\n## Features\n- JWT Authentication with 7-day expiration\n- Role-Based Access Control (Admin & User)\n- Redis Caching for optimized performance\n- Cloudinary integration for image uploads\n\n## Base URLs\n- **Production:** https://social-media-backend-dwnj.onrender.com\n- **Development:** http://localhost:8800\n\n## Authentication\nMost endpoints require a JWT token. After login/register, copy the token from the response and set it in the collection variable `{{token}}`.\n\n## Admin Credentials\n- **Username:** admin\n- **Email:** admin@socialapp.com\n- **Password:** Admin@123",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('token', response.token);",
+									"    pm.collectionVariables.set('userId', response.user._id);",
+									"    pm.collectionVariables.set('username', response.user.username);",
+									"    console.log('Token saved:', response.token);",
+									"    console.log('User ID saved:', response.user._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"Test@123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user account.\n\n**Request Body:**\n- `username` (string, required): 3-20 characters\n- `email` (string, required): Valid email address\n- `password` (string, required): Minimum 6 characters\n\n**Response:**\n- `token` (string): JWT token (expires in 7 days)\n- `user` (object): User details with `_id`, `username`, `email`, `isAdmin`\n\n**Note:** New users are created with `isAdmin: false` by default. Admins must be created using the backend script."
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('token', response.token);",
+									"    pm.collectionVariables.set('userId', response.user._id);",
+									"    pm.collectionVariables.set('username', response.user.username);",
+									"    pm.collectionVariables.set('isAdmin', response.user.isAdmin);",
+									"    console.log('Token saved:', response.token);",
+									"    console.log('User ID saved:', response.user._id);",
+									"    console.log('Is Admin:', response.user.isAdmin);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"testuser@example.com\",\n    \"password\": \"Test@123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login with existing user credentials.\n\n**Request Body:**\n- `email` (string, required): User's email\n- `password` (string, required): User's password\n\n**Response:**\n- `token` (string): JWT token for authentication\n- `user` (object): Complete user profile\n\n**Test Script:** Automatically saves token to collection variables for use in subsequent requests."
+					},
+					"response": []
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('token', response.token);",
+									"    pm.collectionVariables.set('userId', response.user._id);",
+									"    pm.collectionVariables.set('username', response.user.username);",
+									"    pm.collectionVariables.set('isAdmin', response.user.isAdmin);",
+									"    console.log('Admin Token saved:', response.token);",
+									"    console.log('Admin User ID saved:', response.user._id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@socialapp.com\",\n    \"password\": \"Admin@123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as admin user to test admin-specific features.\n\n**Default Admin Credentials:**\n- Email: admin@socialapp.com\n- Password: Admin@123\n\n**Admin Capabilities:**\n- Delete any post\n- Update any user\n- Delete any user\n- All regular user features"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for user registration and login. These endpoints return JWT tokens that must be included in subsequent requests."
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get User by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users?userId={{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "userId",
+									"value": "{{userId}}"
+								}
+							]
+						},
+						"description": "Get user details by user ID.\n\n**Query Parameters:**\n- `userId` (string, required): User's MongoDB ObjectId\n\n**Response:**\n- Complete user profile including followers, followings, profile pictures, bio, etc.\n\n**Note:** Password is excluded from response."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User by Username",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users?username={{username}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "{{username}}"
+								}
+							]
+						},
+						"description": "Get user details by username.\n\n**Query Parameters:**\n- `username` (string, required): User's unique username\n\n**Response:**\n- Complete user profile\n\n**Use Case:** Used for profile pages and user search."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"desc\": \"Software Developer | Tech Enthusiast\",\n    \"city\": \"San Francisco\",\n    \"from\": \"New York\",\n    \"relationship\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Update user profile information.\n\n**Authentication:** Required (JWT token)\n\n**Authorization:**\n- Users can update their own profile\n- Admins can update any profile\n\n**Request Body (all optional):**\n- `desc` (string): User bio/description\n- `city` (string): Current city\n- `from` (string): Hometown\n- `relationship` (number): 1=Single, 2=In Relationship, 3=Married\n- `profilePicture` (string): URL to profile image\n- `coverPicture` (string): URL to cover image\n\n**Note:** Password updates require current password verification (not implemented yet)."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"{{userId}}"
+							]
+						},
+						"description": "Delete a user account.\n\n**Authentication:** Required (JWT token)\n\n**Authorization:**\n- Users can delete their own account\n- Admins can delete any account\n\n**Response:**\n- Success message confirming deletion\n\n**Warning:** This action is irreversible!"
+					},
+					"response": []
+				},
+				{
+					"name": "Follow User",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/:userId/follow",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								":userId",
+								"follow"
+							],
+							"variable": [
+								{
+									"key": "userId",
+									"value": "USER_ID_TO_FOLLOW"
+								}
+							]
+						},
+						"description": "Follow or unfollow a user.\n\n**Authentication:** Required (JWT token)\n\n**Path Parameters:**\n- `userId` (string): ID of user to follow/unfollow\n\n**Behavior:**\n- If not following → Adds to followings and target's followers\n- If already following → Removes from followings and target's followers\n\n**Response:**\n- \"User has been followed\" or \"User has been unfollowed\"\n\n**Note:** User ID is extracted from JWT token automatically."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/search?q=john",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"search"
+							],
+							"query": [
+								{
+									"key": "q",
+									"value": "john"
+								}
+							]
+						},
+						"description": "Search for users by username.\n\n**Query Parameters:**\n- `q` (string, required): Search query\n\n**Features:**\n- Case-insensitive search\n- Partial matching\n- Uses MongoDB text index for fast searching\n\n**Response:**\n- Array of matching users with `_id`, `username`, `profilePicture`\n\n**Performance:** Optimized with database indexing."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Friends",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/users/friends/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"friends",
+								"{{userId}}"
+							]
+						},
+						"description": "Get list of user's friends (followings).\n\n**Path Parameters:**\n- `userId` (string): User's ID\n\n**Response:**\n- Array of user objects for each friend\n- Includes `_id`, `username`, `profilePicture`\n\n**Use Case:** Display friends list on profile page."
+					},
+					"response": []
+				}
+			],
+			"description": "User management endpoints including profile operations, follow/unfollow, and search functionality."
+		},
+		{
+			"name": "Posts",
+			"item": [
+				{
+					"name": "Create Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"desc\": \"Just posted from Postman! 🚀\",\n    \"img\": \"https://res.cloudinary.com/your-cloud/image/upload/v1234567890/sample.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts"
+							]
+						},
+						"description": "Create a new post.\n\n**Authentication:** Required (JWT token)\n\n**Request Body:**\n- `desc` (string, optional): Post description (max 500 characters)\n- `img` (string, optional): URL to post image (Cloudinary URL)\n\n**Response:**\n- Complete post object with `_id`, `userId`, `desc`, `img`, `likes`, `createdAt`\n\n**Note:** User ID is extracted from JWT token automatically.\n\n**Cache Invalidation:** Clears timeline and profile caches to ensure fresh data."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Post by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/:postId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								":postId"
+							],
+							"variable": [
+								{
+									"key": "postId",
+									"value": "POST_ID_HERE"
+								}
+							]
+						},
+						"description": "Get a specific post by ID.\n\n**Path Parameters:**\n- `postId` (string): Post's MongoDB ObjectId\n\n**Response:**\n- Complete post object\n\n**Caching:**\n- Cached for 5 minutes\n- Cache key: `cache:/api/posts/:id`\n\n**Performance:** ~3-10ms (cached), ~50-100ms (database)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"desc\": \"Updated post description!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/:postId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								":postId"
+							],
+							"variable": [
+								{
+									"key": "postId",
+									"value": "POST_ID_HERE"
+								}
+							]
+						},
+						"description": "Update an existing post.\n\n**Authentication:** Required (JWT token)\n\n**Authorization:**\n- Users can update their own posts\n- Admins can update any post\n\n**Path Parameters:**\n- `postId` (string): Post's ID\n\n**Request Body:**\n- `desc` (string): Updated description\n- `img` (string): Updated image URL\n\n**Cache Invalidation:** Clears all post-related caches."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/:postId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								":postId"
+							],
+							"variable": [
+								{
+									"key": "postId",
+									"value": "POST_ID_HERE"
+								}
+							]
+						},
+						"description": "Delete a post.\n\n**Authentication:** Required (JWT token)\n\n**Authorization:**\n- Users can delete their own posts\n- Admins can delete any post\n\n**Path Parameters:**\n- `postId` (string): Post's ID\n\n**Response:**\n- Success message confirming deletion\n\n**Cache Invalidation:** Clears all post-related caches.\n\n**Frontend Implementation:** Shows \"Delete (Admin)\" for admin deleting others' posts."
+					},
+					"response": []
+				},
+				{
+					"name": "Like/Unlike Post",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/:postId/like",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								":postId",
+								"like"
+							],
+							"variable": [
+								{
+									"key": "postId",
+									"value": "POST_ID_HERE"
+								}
+							]
+						},
+						"description": "Like or unlike a post.\n\n**Authentication:** Required (JWT token)\n\n**Path Parameters:**\n- `postId` (string): Post's ID\n\n**Behavior:**\n- If not liked → Adds user ID to likes array\n- If already liked → Removes user ID from likes array\n\n**Response:**\n- \"The post has been liked\" or \"The post has been disliked\"\n\n**Note:** User ID is extracted from JWT token automatically.\n\n**Cache Invalidation:** Clears specific post cache."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Timeline Posts",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/timeline/all/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"timeline",
+								"all",
+								"{{userId}}"
+							]
+						},
+						"description": "Get personalized timeline/feed for a user.\n\n**Authentication:** Required (JWT token)\n\n**Path Parameters:**\n- `userId` (string): User's ID\n\n**Response:**\n- Array of posts from user and their followings\n- Sorted by creation date (newest first)\n\n**Caching:**\n- Cached for 2 minutes\n- Cache key: `cache:/api/posts/timeline/all/:userId`\n\n**Performance:**\n- First request: ~500ms\n- Cached request: ~3-10ms (99.8% faster)\n\n**Use Case:** Main feed on home page."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User's Posts (Profile)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/profile/{{username}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"profile",
+								"{{username}}"
+							]
+						},
+						"description": "Get all posts by a specific user.\n\n**Authentication:** Required (JWT token)\n\n**Path Parameters:**\n- `username` (string): User's username\n\n**Response:**\n- Array of user's posts\n- Sorted by creation date (newest first)\n\n**Caching:**\n- Cached for 3 minutes\n- Cache key: `cache:/api/posts/profile/:username`\n\n**Use Case:** Profile page displaying user's posts."
+					},
+					"response": []
+				},
+				{
+					"name": "Search Posts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/posts/search?username=john",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"posts",
+								"search"
+							],
+							"query": [
+								{
+									"key": "username",
+									"value": "john"
+								}
+							]
+						},
+						"description": "Search posts by username.\n\n**Query Parameters:**\n- `username` (string): Search query for username\n\n**Response:**\n- Array of posts by users matching the search query\n\n**Caching:**\n- Cached for 5 minutes\n- Cache key: `cache:/api/posts/search?username=:query`\n\n**Performance:** Uses database indexing for fast search."
+					},
+					"response": []
+				}
+			],
+			"description": "Post management endpoints including CRUD operations, likes, and timeline functionality with Redis caching."
+		},
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "API Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/",
+							"host": [
+								"{{baseUrl}}"
+							]
+						},
+						"description": "Check if the API is running.\n\n**Response:**\n- Welcome message confirming API is operational\n\n**Use Case:** Server health monitoring and deployment verification."
+					},
+					"response": []
+				}
+			],
+			"description": "Health check endpoint to verify API availability."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://social-media-backend-dwnj.onrender.com",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "isAdmin",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
