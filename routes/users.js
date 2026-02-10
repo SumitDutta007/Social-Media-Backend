@@ -1,50 +1,121 @@
 const router = require("express").Router();
 const User = require("../models/user");
 const bcrypt = require("bcrypt");
+const { verifyToken, verifyAuthorization, verifyAdmin } = require("../middleware/auth");
+const { uploadProfile, uploadCover } = require("../config/cloudinary");
 
-//update user
-router.put("/:id", async (req, res) => {
-  if (req.body.userId === req.params.id || req.body.isAdmin) {
-    if (req.body.password) {
-      try {
-        const salt = await bcrypt.genSalt(10);
-        req.body.password = await bcrypt.hash(req.body.password, salt);
-      } catch (err) {
-        console.log("Error1: ", err.message);
-        return res.status(500).json(err);
-      }
-    }
-
+// UPDATE USER - Protected route (user can update own account or admin can update any)
+router.put("/:id", verifyAuthorization, async (req, res) => {
+  if (req.body.password) {
     try {
-      await User.findByIdAndUpdate(req.params.id, {
-        $set: req.body,
+      const salt = await bcrypt.genSalt(10);
+      req.body.password = await bcrypt.hash(req.body.password, salt);
+    } catch (err) {
+      console.log("Error hashing password: ", err.message);
+      return res.status(500).json({ 
+        error: "Password update failed",
+        message: err.message 
       });
-      res.status(200).json("Account has been updated");
-    } catch (err) {
-      console.log("Error2: ", err.message);
-      return res.status(500).json(err);
     }
-  } else {
-    return res.status(403).json("You can update only your account");
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    ).select('-password');
+
+    res.status(200).json({
+      message: "Account has been updated",
+      user: updatedUser
+    });
+  } catch (err) {
+    console.log("Error updating user: ", err.message);
+    return res.status(500).json({ 
+      error: "Update failed",
+      message: err.message 
+    });
   }
 });
 
-//delete user
-router.delete("/:id", async (req, res) => {
-  if (req.body.userId === req.params.id || req.body.isAdmin) {
-    try {
-      await User.findByIdAndDelete(req.params.id);
-      res.status(200).json("Account has been deleted");
-    } catch (err) {
-      console.log("Error: ", err.message);
-      return res.status(500).json(err);
+// UPLOAD PROFILE PICTURE - Protected route
+router.post("/:id/upload-profile", verifyAuthorization, uploadProfile.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        error: "No file uploaded",
+        message: "Please select an image file" 
+      });
     }
-  } else {
-    return res.status(403).json("You can delete only your account");
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { profilePicture: req.file.path },
+      { new: true }
+    ).select('-password');
+
+    res.status(200).json({
+      message: "Profile picture uploaded successfully",
+      imageUrl: req.file.path,
+      user: updatedUser
+    });
+  } catch (err) {
+    console.log("Error uploading profile picture: ", err.message);
+    return res.status(500).json({ 
+      error: "Upload failed",
+      message: err.message 
+    });
   }
 });
 
-//get a user
+// UPLOAD COVER PICTURE - Protected route
+router.post("/:id/upload-cover", verifyAuthorization, uploadCover.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        error: "No file uploaded",
+        message: "Please select an image file" 
+      });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { coverPicture: req.file.path },
+      { new: true }
+    ).select('-password');
+
+    res.status(200).json({
+      message: "Cover picture uploaded successfully",
+      imageUrl: req.file.path,
+      user: updatedUser
+    });
+  } catch (err) {
+    console.log("Error uploading cover picture: ", err.message);
+    return res.status(500).json({ 
+      error: "Upload failed",
+      message: err.message 
+    });
+  }
+});
+
+// DELETE USER - Protected route (user can delete own account or admin can delete any)
+router.delete("/:id", verifyAuthorization, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.params.id);
+    res.status(200).json({
+      message: "Account has been deleted successfully"
+    });
+  } catch (err) {
+    console.log("Error: ", err.message);
+    return res.status(500).json({ 
+      error: "Deletion failed",
+      message: err.message 
+    });
+  }
+});
+
+// GET USER - Public route
 router.get("/", async (req, res) => {
   const userId = req.query.userId;
   const username = req.query.username;
@@ -130,57 +201,93 @@ router.get("/friends/:userId", async (req, res) => {
   }
 });
 
-//follow a user
-router.put("/:id/follow", async (req, res) => {
-  if (req.body.userId !== req.params.id) {
+//FOLLOW USER - Protected route (authenticated users can follow others)
+router.put("/:id/follow", verifyToken, async (req, res) => {
+  // Use user ID from JWT token
+  const currentUserId = req.user.id;
+  
+  if (currentUserId !== req.params.id) {
     try {
       const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
+      const currentUser = await User.findById(currentUserId);
 
       if (!user || !currentUser) {
-        return res.status(404).json("User not found");
+        return res.status(404).json({ 
+          error: "User not found",
+          message: "The user you're trying to follow doesn't exist" 
+        });
       }
 
-      if (!user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $push: { followers: req.body.userId } });
+      if (!user.followers.includes(currentUserId)) {
+        await user.updateOne({ $push: { followers: currentUserId } });
         await currentUser.updateOne({ $push: { followings: req.params.id } });
-        res.status(200).json("User has been followed");
+        res.status(200).json({
+          message: "User has been followed successfully",
+          followersCount: user.followers.length + 1
+        });
       } else {
-        res.status(403).json("You already follow this user");
+        res.status(403).json({ 
+          error: "Already following",
+          message: "You already follow this user" 
+        });
       }
     } catch (err) {
       console.log("Error: ", err.message);
-      return res.status(500).json(err);
+      return res.status(500).json({ 
+        error: "Follow operation failed",
+        message: err.message 
+      });
     }
   } else {
-    return res.status(403).json("You can't follow yourself");
+    return res.status(403).json({ 
+      error: "Invalid operation",
+      message: "You can't follow yourself" 
+    });
   }
 });
 
-//unfollow a user
-router.put("/:id/unfollow", async (req, res) => {
-  if (req.body.userId !== req.params.id) {
+//UNFOLLOW USER - Protected route (authenticated users can unfollow others)
+router.put("/:id/unfollow", verifyToken, async (req, res) => {
+  // Use user ID from JWT token
+  const currentUserId = req.user.id;
+  
+  if (currentUserId !== req.params.id) {
     try {
       const user = await User.findById(req.params.id);
-      const currentUser = await User.findById(req.body.userId);
+      const currentUser = await User.findById(currentUserId);
 
       if (!user || !currentUser) {
-        return res.status(404).json("User not found");
+        return res.status(404).json({ 
+          error: "User not found",
+          message: "The user you're trying to unfollow doesn't exist" 
+        });
       }
 
-      if (user.followers.includes(req.body.userId)) {
-        await user.updateOne({ $pull: { followers: req.body.userId } });
+      if (user.followers.includes(currentUserId)) {
+        await user.updateOne({ $pull: { followers: currentUserId } });
         await currentUser.updateOne({ $pull: { followings: req.params.id } });
-        res.status(200).json("User has been unfollowed");
+        res.status(200).json({
+          message: "User has been unfollowed successfully",
+          followersCount: user.followers.length - 1
+        });
       } else {
-        res.status(403).json("You don't follow this user");
+        res.status(403).json({ 
+          error: "Not following",
+          message: "You don't follow this user" 
+        });
       }
     } catch (err) {
       console.log("Error:", err.message);
-      return res.status(500).json(err);
+      return res.status(500).json({ 
+        error: "Unfollow operation failed",
+        message: err.message 
+      });
     }
   } else {
-    return res.status(403).json("You can't unfollow yourself");
+    return res.status(403).json({ 
+      error: "Invalid operation",
+      message: "You can't unfollow yourself" 
+    });
   }
 });
 
