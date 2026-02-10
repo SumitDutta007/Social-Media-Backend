@@ -5,9 +5,10 @@
 [![Express](https://img.shields.io/badge/Express-4.x-blue.svg)](https://expressjs.com/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6.x-brightgreen.svg)](https://www.mongodb.com/)
 [![Redis](https://img.shields.io/badge/Redis-7.x-red.svg)](https://redis.io/)
+[![JWT](https://img.shields.io/badge/JWT-Enabled-orange.svg)](https://jwt.io/)
 [![Production](https://img.shields.io/badge/Status-Production-success.svg)](https://social-media-backend-dwnj.onrender.com)
 
-A high-performance, scalable social media platform backend built with modern technologies and enterprise-level best practices. Features advanced caching, database optimization, and microservices-ready architecture.
+A high-performance, scalable social media platform backend built with modern technologies and enterprise-level best practices. Features JWT authentication, role-based access control (RBAC), advanced caching, database optimization, and microservices-ready architecture.
 
 ## 📋 Table of Contents
 
@@ -30,13 +31,23 @@ A high-performance, scalable social media platform backend built with modern tec
 ## ✨ Features
 
 ### Core Functionality
-- 🔐 **User Authentication & Authorization** - JWT-based secure authentication
+- 🔐 **JWT Authentication** - Secure token-based authentication with 7-day expiration
+- 🛡️ **Role-Based Access Control (RBAC)** - Admin and User roles with granular permissions
 - 👥 **User Management** - Complete CRUD operations for user profiles
 - 📝 **Post Management** - Create, read, update, delete posts with image uploads
-- ❤️ **Social Interactions** - Like/unlike posts, follow/unfollow users
+- 🗑️ **Smart Delete** - Users can delete own posts, Admins can delete any post
+- ❤️ **Social Interactions** - Like/unlike posts, follow/unfollow users (JWT-protected)
 - 🔍 **Advanced Search** - Real-time user and post search with text indexing
 - 📊 **Personalized Feed** - Timeline algorithm with followed users' content
 - 👤 **User Profiles** - Customizable profiles with bio, location, and relationship status
+
+### Security Features
+- 🔒 **Password Hashing** - Bcrypt with 10 rounds of salting
+- 🎫 **JWT Tokens** - Automatic token validation on protected routes
+- 🔑 **Authorization Middleware** - verifyToken, verifyAuthorization, verifyAdmin
+- 🚫 **Ownership Verification** - Users can only modify their own resources
+- 🛡️ **Admin Privileges** - Admins can manage all posts and users
+- 📜 **Secure Admin Creation** - Backend script for creating admin accounts
 
 ### Advanced Features
 - ⚡ **Redis Caching** - Sub-10ms response times with intelligent cache invalidation
@@ -47,6 +58,7 @@ A high-performance, scalable social media platform backend built with modern tec
 - 🌐 **CORS Configuration** - Secure cross-origin resource sharing
 - 📦 **Image Hosting** - Cloudinary integration for media storage
 - 🔒 **Data Validation** - Comprehensive input validation and sanitization
+- ✅ **Automated Testing** - 9 comprehensive tests (100% passing)
 
 ---
 
@@ -131,8 +143,9 @@ The application follows microservices principles with clear separation of concer
 - **Redis Cloud** - In-memory data structure store
 
 ### Authentication & Security
-- **bcrypt** - Password hashing
-- **JWT** - JSON Web Tokens (planned)
+- **bcrypt** - Password hashing (10 rounds)
+- **jsonwebtoken** - JWT token generation and verification
+- **JWT Middleware** - verifyToken, verifyAuthorization, verifyAdmin
 - **Helmet** - Security headers (planned)
 - **express-rate-limit** - API rate limiting (planned)
 
@@ -269,10 +282,14 @@ Content-Type: application/json
 
 Response: 200 OK
 {
-  "_id": "507f1f77bcf86cd799439011",
-  "username": "johndoe",
-  "email": "john@example.com",
-  "createdAt": "2024-01-15T10:30:00.000Z"
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "isAdmin": false,
+    "createdAt": "2024-01-15T10:30:00.000Z"
+  }
 }
 ```
 
@@ -288,13 +305,22 @@ Content-Type: application/json
 
 Response: 200 OK
 {
-  "_id": "507f1f77bcf86cd799439011",
-  "username": "johndoe",
-  "email": "john@example.com",
-  "profilePicture": "https://...",
-  "followers": [],
-  "followings": []
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "_id": "507f1f77bcf86cd799439011",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "isAdmin": false,
+    "profilePicture": "https://...",
+    "followers": [],
+    "followings": []
+  }
 }
+```
+
+**Note:** Token expires in 7 days. Include token in Authorization header for protected routes:
+```http
+Authorization: Bearer <token>
 ```
 
 ### User Endpoints
@@ -323,42 +349,40 @@ Response: 200 OK
 #### Update User
 ```http
 PUT /api/users/:id
+Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "userId": "507f1f77bcf86cd799439011",
   "desc": "Updated bio",
   "city": "San Francisco"
 }
 
 Response: 200 OK
 "Account has been updated"
+
+Note: Users can only update their own account. Admins can update any account.
 ```
 
 #### Delete User
 ```http
 DELETE /api/users/:id
-Content-Type: application/json
-
-{
-  "userId": "507f1f77bcf86cd799439011"
-}
+Authorization: Bearer <token>
 
 Response: 200 OK
 "Account has been deleted successfully"
+
+Note: Users can only delete their own account. Admins can delete any account.
 ```
 
 #### Follow/Unfollow User
 ```http
 PUT /api/users/:id/follow
-Content-Type: application/json
-
-{
-  "userId": "currentUserId"
-}
+Authorization: Bearer <token>
 
 Response: 200 OK
 "User has been followed" | "User has been unfollowed"
+
+Note: User ID is extracted from JWT token automatically.
 ```
 
 #### Search Users
@@ -380,10 +404,10 @@ Response: 200 OK
 #### Create Post
 ```http
 POST /api/posts
+Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "userId": "507f1f77bcf86cd799439011",
   "desc": "My first post!",
   "img": "https://..."
 }
@@ -397,6 +421,8 @@ Response: 200 OK
   "likes": [],
   "createdAt": "2024-01-15T10:30:00.000Z"
 }
+
+Note: User ID is extracted from JWT token automatically.
 ```
 
 #### Get Post by ID
@@ -417,41 +443,41 @@ Response: 200 OK (Cached: 5 minutes)
 #### Update Post
 ```http
 PUT /api/posts/:id
+Authorization: Bearer <token>
 Content-Type: application/json
 
 {
-  "userId": "507f1f77bcf86cd799439011",
   "desc": "Updated post description"
 }
 
 Response: 200 OK
 "The post has been updated"
+
+Note: Users can only update their own posts. Admins can update any post.
 ```
 
 #### Delete Post
 ```http
 DELETE /api/posts/:id
-Content-Type: application/json
-
-{
-  "userId": "507f1f77bcf86cd799439011"
-}
+Authorization: Bearer <token>
 
 Response: 200 OK
-"The post has been deleted"
+{
+  "message": "Post deleted successfully"
+}
+
+Note: Users can only delete their own posts. Admins can delete any post.
 ```
 
 #### Like/Unlike Post
 ```http
 PUT /api/posts/:id/like
-Content-Type: application/json
-
-{
-  "userId": "507f1f77bcf86cd799439011"
-}
+Authorization: Bearer <token>
 
 Response: 200 OK
 "The post has been liked" | "The post has been disliked"
+
+Note: User ID is extracted from JWT token automatically.
 ```
 
 #### Get Timeline (Feed)
@@ -536,8 +562,8 @@ MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/social-media?retry
 # Redis (Optional for local development)
 REDIS_URL=redis://localhost:6379
 
-# JWT Secret (Future implementation)
-JWT_SECRET=your_super_secret_key_here
+# JWT Configuration
+JWT_SECRET=your_super_secret_key_here_min_32_chars
 JWT_EXPIRE=7d
 
 # CORS
@@ -549,7 +575,16 @@ CLIENT_URL=http://localhost:3000
 node create-indexes.js
 ```
 
-5. **Start development server**
+5. **Create admin user (optional)**
+```bash
+node create-admin.js
+```
+Default admin credentials:
+- Username: `admin`
+- Email: `admin@socialapp.com`
+- Password: `Admin@123`
+
+6. **Start development server**
 ```bash
 npm run dev
 # or
@@ -571,6 +606,8 @@ Server runs on: `http://localhost:8800`
 | `REDIS_URL` | Redis connection string | No | - |
 | `NODE_ENV` | Environment mode | No | development |
 | `CLIENT_URL` | Frontend URL for CORS | No | * |
+| `JWT_SECRET` | Secret key for JWT signing | Yes | - |
+| `JWT_EXPIRE` | JWT token expiration time | No | 7d |
 
 ### CORS Configuration
 
@@ -616,7 +653,10 @@ const corsOptions = {
   coverPicture: String,
   followers: Array,
   followings: Array,
-  isAdmin: Boolean,
+  isAdmin: {
+    type: Boolean,
+    default: false
+  },
   desc: String,
   city: String,
   from: String,
@@ -700,17 +740,37 @@ git push origin main
 ## 🔒 Security
 
 ### Implemented
-- ✅ Password hashing with bcrypt
+- ✅ JWT authentication with 7-day expiration
+- ✅ Role-based access control (User & Admin)
+- ✅ Password hashing with bcrypt (10 rounds)
+- ✅ Token-based authorization middleware
+- ✅ Ownership verification on all mutations
 - ✅ CORS configuration
 - ✅ Input validation
 - ✅ MongoDB injection prevention
 - ✅ HTTPS in production
+- ✅ Automated security testing
+
+### Admin User Creation
+
+Admins cannot be created through public registration for security. Use the backend script:
+
+```bash
+node create-admin.js
+```
+
+**Default Admin Credentials:**
+- Username: `admin`
+- Email: `admin@socialapp.com`
+- Password: `Admin@123`
+
+**Important:** Change the default password after first login!
 
 ### Planned
-- [ ] JWT authentication
 - [ ] Rate limiting
 - [ ] Helmet.js security headers
 - [ ] API key authentication
+- [ ] Two-factor authentication (2FA)
 
 ---
 
@@ -744,13 +804,18 @@ This project is licensed under the MIT License.
 ## 🗺️ Roadmap
 
 ### Completed ✅
+- [x] JWT authentication with role-based access control
+- [x] All routes protected with authorization middleware
+- [x] Admin user creation system
 - [x] Redis caching implementation
 - [x] Database indexing optimization
 - [x] Search functionality
 - [x] Production deployment
+- [x] Automated testing suite (9/9 tests passing)
+- [x] Frontend JWT integration
+- [x] Delete post functionality with RBAC
 
 ### In Progress 🚧
-- [ ] JWT authentication
 - [ ] Rate limiting
 - [ ] Real-time notifications
 
@@ -758,6 +823,9 @@ This project is licensed under the MIT License.
 - [ ] Direct messaging system
 - [ ] Cloudinary integration
 - [ ] Analytics dashboard
+- [ ] Two-factor authentication
+- [ ] Email verification
+- [ ] Password reset functionality
 - [ ] Microservices migration
 
 ---
